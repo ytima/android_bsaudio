@@ -1,0 +1,15 @@
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/CMakeFiles/install/local.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/CMakeFiles/list_install_components.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/CMakeFiles/edit_cache.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/CMakeFiles/BSAudioEngine.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/CMakeFiles/rebuild_cache.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/CMakeFiles/install/strip.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/CMakeFiles/install.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/CMakeFiles/cpufeatures.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/oboe/CMakeFiles/install/local.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/oboe/CMakeFiles/install/strip.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/oboe/CMakeFiles/install.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/oboe/CMakeFiles/list_install_components.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/oboe/CMakeFiles/rebuild_cache.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/oboe/CMakeFiles/edit_cache.dir
+/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86/oboe/CMakeFiles/oboe.dir

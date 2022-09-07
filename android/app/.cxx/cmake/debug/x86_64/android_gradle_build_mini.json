@@ -1,0 +1,58 @@
+{
+  "buildFiles": [
+    "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/src/main/cpp/CMakeLists.txt",
+    "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/src/main/cpp/BSAudioEngine/lib/include/juce_audio_devices/native/oboe/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/developer/Library/Android/sdk/cmake/3.10.2.4988404/bin/ninja",
+      "-C",
+      "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/developer/Library/Android/sdk/cmake/3.10.2.4988404/bin/ninja",
+    "-C",
+    "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {
+    "BSAudioEngine-Debug-x86_64": {
+      "artifactName": "BSAudioEngine",
+      "buildCommandComponents": [
+        "/Users/developer/Library/Android/sdk/cmake/3.10.2.4988404/bin/ninja",
+        "-C",
+        "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86_64",
+        "BSAudioEngine"
+      ],
+      "abi": "x86_64",
+      "output": "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/build/intermediates/cmake/debug/obj/x86_64/libBSAudioEngine.so",
+      "runtimeFiles": []
+    },
+    "oboe-Debug-x86_64": {
+      "artifactName": "oboe",
+      "buildCommandComponents": [
+        "/Users/developer/Library/Android/sdk/cmake/3.10.2.4988404/bin/ninja",
+        "-C",
+        "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86_64",
+        "oboe"
+      ],
+      "abi": "x86_64",
+      "output": "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86_64/oboe/liboboe.a",
+      "runtimeFiles": []
+    },
+    "cpufeatures-Debug-x86_64": {
+      "artifactName": "cpufeatures",
+      "buildCommandComponents": [
+        "/Users/developer/Library/Android/sdk/cmake/3.10.2.4988404/bin/ninja",
+        "-C",
+        "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86_64",
+        "cpufeatures"
+      ],
+      "abi": "x86_64",
+      "output": "/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/x86_64/libcpufeatures.a",
+      "runtimeFiles": []
+    }
+  }
+}
