@@ -18,6 +18,29 @@ Java_com_example_test2native_1cpp_MainActivity_InitialiseJuce(
 }
 
 extern "C" JNIEXPORT void JNICALL
+//        Java_com_androidlib_BSEngineModule_BSTEST
+//Java_com_example_test2native_1cpp_BSEngineModule_testtestFunct(
+Java_com_androidlib_BSEngineModule_testtestFunct(
+        JNIEnv *env, jobject thiz) {
+
+    jclass cls_foo = (*env).GetObjectClass(thiz);
+    jmethodID mid_callback = (*env).GetMethodID(cls_foo, "methodVarCallbackOne", "(I)V");
+//    (*env).CallVoidMethod(thiz, mid_callback, 1);
+
+
+    std::function<void (int)> t = [&env, &thiz](int value)->void{
+        jclass cls_foo = (*env).GetObjectClass(thiz);
+        jmethodID mid_callback = (*env).GetMethodID(cls_foo, "methodVarCallbackOne", "(I)V");
+        (*env).CallVoidMethod(thiz, mid_callback, value);
+    };
+    testtestFunct(t);
+//    testtestFunct( [](int a)->void {
+//        (*env).CallVoidMethod(thiz, mid_callback,);
+//    });
+}
+
+
+extern "C" JNIEXPORT void JNICALL
 Java_com_androidlib_MainActivity_InitialiseJuce(
         JNIEnv* env,
         jobject activity/* this */) {

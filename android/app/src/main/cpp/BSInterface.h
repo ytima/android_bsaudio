@@ -15,6 +15,7 @@ void BSReadMixdownFlac();
 // a call to prove that we can get the device initilised.
 // Will be redundatnt and should be ignored when there are event and callback wrappers working for android
 bool BSInitialiseDevice();
+void testtestFunct( std::function<void (int)> testFuncccc);
 void BSRecordTrack(long startAtMicros, int currentTrackNumber, int currentTakeNumber, CallbackWrapper* callback);
 void BSPlayTrack(long startAtMicros, int currentTrackNumber, int currentTakeNumber, CallbackWrapper *callback);
 void BSSetTake(int trackNumber, int takeNumber);

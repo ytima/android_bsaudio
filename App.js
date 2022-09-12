@@ -58,7 +58,14 @@ const App = () => {
   console.log('BSAudioEngine', BSAudioEngine)
   // console.log('NativeModules', NativeModules)
   useEffect(() => {
-    BSAudioEngine.BSTEST()
+    const cb = (value) => {
+      console.log('testCallLib', value)
+    }
+    setTimeout(() => {
+      BSAudioEngine.testCallLib(cb)
+      // BSAudioEngine.testCallLib()
+    }, 1000)
+    
   }, [])
   const isDarkMode = useColorScheme() === 'dark';
 

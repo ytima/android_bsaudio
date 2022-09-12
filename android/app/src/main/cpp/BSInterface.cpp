@@ -12,6 +12,11 @@ long TestFunction(long a, long b)
     return a * b;
 }
 
+void testtestFunct( std::function<void (int)> testFuncccc)
+{
+    testFuncccc(112233);
+}
+
 void BSSetMetronomeSound(std::string absoluteFilePathDown, std::string absoluteFilePathUp)
 {
     juce::File file = juce::String(absoluteFilePathDown);
@@ -26,7 +31,7 @@ void BSSetMetronomeSound(std::string absoluteFilePathDown, std::string absoluteF
     {
         engine->metronomeDownBuffer.makeCopyOf(juce::AudioBuffer<float>(0, 0));
     }
-    
+
     file = juce::String(absoluteFilePathUp);
     bufferpPtr = &engine->metronomeUpBuffer;
 
@@ -44,7 +49,7 @@ void BSSetMetronomeSound(std::string absoluteFilePathDown, std::string absoluteF
 void BSWriteMixdownFlac(CallbackWrapper *callback)
 {
     juce::AudioBuffer<float>* mixdown = engine->mainBus->getBakedEffectBufferPointer();
-    
+
     juce::File flacFile = engine->tempDirectory.getChildFile("mixdown.flac");
     writeCompressedFlacFile(flacFile, mixdown);
     callback->writeMixdownCallback(flacFile.getFullPathName().toStdString());
@@ -84,11 +89,11 @@ bool BSInitialiseDevice()
     // successful
     if (engine->audioDeviceManager.getCurrentAudioDevice())
     {
-         // create local directory in temp to store all files so all can be removed on shutdown
+        // create local directory in temp to store all files so all can be removed on shutdown
         auto dir = juce::File::getSpecialLocation(juce::File::tempDirectory).getChildFile("BSAudioEngineTemp");
         engine->tempDirectory = dir;
 
-         // if it already exists as a directory, read files into the buffers
+        // if it already exists as a directory, read files into the buffers
         if(dir.exists() && dir.isDirectory())
         {
             for (int i = 0; i < engine->trackArray.size(); i++)
@@ -186,7 +191,7 @@ void BSClearAllUnusedTrackTakes()
                 file.deleteFile();
             }
         }
-        
+
         // selected take is now only take in directory, but has wrong name
         juce::File selectedFile = flacFilePathFromTrackNumber(trackNum, track->getCurrentTakeNumber());
         selectedFile.moveFileTo(flacFilePathFromTrackNumber(trackNum, 0));
@@ -230,10 +235,10 @@ void BSMultitrackRecord(long startAtMicros, int currentTrackNumber, int currentT
 {
     if (!engine->recordTrack && currentTakeNumber <= engine->trackArray.getReference(currentTrackNumber)->getTakesSize())
     {
-        
+
         if (currentTakeNumber+1 > engine->trackArray.getReference(currentTrackNumber)->getTakesSize())
             engine->trackArray.getReference(currentTrackNumber)->newTake();
-        
+
         engine->trackArray.getReference(currentTrackNumber)->setCurrentTakeNumber(currentTakeNumber);
         engine->trackArray.getReference(currentTrackNumber)->getCurrentTakeBufferPointer()->clear();
         juce::File flacFile = flacFilePathFromTrackNumber(currentTrackNumber, currentTakeNumber);
@@ -329,7 +334,7 @@ bool BSMixdown()
     juce::AudioBuffer<float>* mixdownBufferPtr = &engine->mixdownBuffer;
     mixdownBufferPtr->clear();
     int numMixdownSamples = 0;
-    
+
     // get the longest non-sampleLoop buffer size
     for (auto track : engine->trackArray)
     {
@@ -339,21 +344,21 @@ bool BSMixdown()
             numMixdownSamples = track->getCurrentTakeBufferPointer()->getNumSamples();
         }
     }
-    
+
     // if the numMixdownSamples is still 0, all tracks are sampleLoops.
     // set the numMixdownSamples to maximum file length allowed
     if (numMixdownSamples == 0) { numMixdownSamples = engine->maxFileLengthSamples; }
-    
+
     mixdownBufferPtr->setSize(2, numMixdownSamples);
-    
+
     // bake effect to each track and add to buffer
     for (auto& track : engine->trackArray)
     {
         juce::AudioBuffer<float> tempBuffer;
-        
+
         track->bakeEffect();
         tempBuffer.makeCopyOf(track->getBakedEffectBuffer());
-        
+
         // if sampleloop, trim buffer to length of longest non-sampleloop buffer
         if (track->isSampleLoop())
         {
@@ -363,16 +368,16 @@ bool BSMixdown()
                 tempBuffer.applyGainRamp(0, tempBuffer.getNumSamples()-1024, 1024, 1.0f, 0.0f);
             }
         }
-        
+
         mixdownBufferPtr->addFrom(0, 0, tempBuffer, 0, 0, tempBuffer.getNumSamples(),
                                   track->panChannelGainArray.getUnchecked(0)*track->gain);
         mixdownBufferPtr->addFrom(1, 0, tempBuffer, 1, 0, tempBuffer.getNumSamples(),
                                   track->panChannelGainArray.getUnchecked(1)*track->gain);
     }
-    
+
     engine->mainBus->getCurrentTakeBufferPointer()->makeCopyOf(*mixdownBufferPtr);
     engine->mainBus->bakeEffect();
-    
+
     if (engine->mixdownBuffer.getNumSamples() > 0)
         return true;
     else
@@ -457,12 +462,12 @@ void BSReadFile(std::string filePath, int trackNum, int takeNum, bool sampleLoop
     juce::AudioBuffer<float>* bufferPtr = engine->trackArray.getReference(trackNum)->getTakeBufferPointer(takeNum);
     readFile(file, bufferPtr);
     engine->trackArray.getReference(trackNum)->setSampleLoop(sampleLoop);
-    
+
     // callback info
     int sampleRate = engine->sampleRate;
     std::string newFilePath = flacFilePathFromTrackNumber(trackNum, takeNum).getFullPathName().toStdString();
     long recLen = bufferPtr->getNumSamples();
-    
+
     // write the bufferPtr to disk
     if (file.exists() && bufferPtr->getNumSamples() > 0)
     {
@@ -477,7 +482,7 @@ void BSReadFile(std::string filePath, int trackNum, int takeNum, bool sampleLoop
         engine->trackArray.getReference(trackNum)->getTakeBufferPointer(takeNum)->setSize(0, 0);
         std::vector<float> emptyVector = { 0.0f, 0.9f, 1.0f };
         callback->readFileCallback(recLen, sampleRate, newFilePath, emptyVector);
-    }   
+    }
 }
 
 bool BSMonitor()
@@ -606,7 +611,7 @@ void BSEngine::timerCallback()
             bufferPtr->applyGainRamp(bufferPtr->getNumSamples()-1024, 1024, 1.0f, 0.0f);
             writeFlacFile(file, bufferPtr);
         }
-        
+
         trackArray.getReference(currentTrackNumber)->setWaveformArray(waveformArray(bufferPtr));
 
         if (file.exists() && bufferPtr->getNumSamples() > 0)
@@ -619,7 +624,7 @@ void BSEngine::timerCallback()
             engine->stopTimer();
         }
     }
-    
+
     // clean up
     m_writeNumSamples = 0;
     offsetNumSamples = 0;
@@ -633,19 +638,19 @@ void BSEngine::audioDeviceAboutToStart(juce::AudioIODevice *device)
 
     if (device->getCurrentSampleRate() != sampleRate || device->getCurrentBufferSizeSamples() != bufferSize)
     {
-        
+
         if (m_outputBufferPos > 0)
             setOutputBufferPos((m_outputBufferPos/sampleRate) * device->getCurrentSampleRate());
-        
+
         maxFileLengthSamples = maxFileLengthSeconds * device->getCurrentSampleRate();
-        
+
         juce::AudioDeviceManager::AudioDeviceSetup setup = engine->audioDeviceManager.getAudioDeviceSetup();
         juce::Array<int> bufferSizes = engine->audioDeviceManager.getCurrentAudioDevice()->getAvailableBufferSizes();
         juce::Array<double> sampleRates = engine->audioDeviceManager.getCurrentAudioDevice()->getAvailableSampleRates();
         setup.bufferSize = bufferSizes.getFirst();
         setup.sampleRate = sampleRates.getLast();
         audioDeviceManager.setAudioDeviceSetup(setup, false);
-        
+
         sampleRate = device->getCurrentSampleRate();
         bufferSize = device->getCurrentBufferSizeSamples();
 
@@ -655,7 +660,7 @@ void BSEngine::audioDeviceAboutToStart(juce::AudioIODevice *device)
 
         // initialise mainBus graph
         mainBus->initialiseEffectProcessorGraph(sampleRate, bufferSize);
-        
+
         // engineActive, this is not initial start up
         // files on the device need resampled into track buffers
         if (engineActive)
@@ -673,7 +678,7 @@ void BSEngine::audioDeviceAboutToStart(juce::AudioIODevice *device)
             BSSetMetronomeSound(metronomeDownFilePath, metronomeUpFilePath);
         }
     }
-    
+
     // latency always need to be accounted for
     m_inputLatency = device->getInputLatencyInSamples();
     m_outputLatency = device->getOutputLatencyInSamples();
@@ -691,9 +696,9 @@ void BSEngine::audioDeviceStopped()
     // if device is stopped, stop the recording - which sends the recording callback to frontend.
     if (recordTrack)
         BSStop();
-    
+
     mainBus->processorGraph->reset();
-    
+
     for (auto& track : trackArray)
         track->resetEffectGraph();
 }
