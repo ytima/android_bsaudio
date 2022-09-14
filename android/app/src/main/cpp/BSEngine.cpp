@@ -6,11 +6,10 @@
 
 #include "BSEngine.h"
 
-BSEngine* engine = nullptr;
+BSEngine *engine = nullptr;
 //BSOutputDeviceFlag outputDeviceFlag;  // keeps track bluetooth headphones, set by JUCE "juce_ios_Audio.cpp"
 
-BSEngine::BSEngine()
-{
+BSEngine::BSEngine() {
     // add 4 (default amount) tracks to the track array
     for (int i = 0; i < 4; i++)
         trackArray.add(new Track());
@@ -44,29 +43,28 @@ BSEngine::~BSEngine()
 }
 
 // Writing audio to disk using background thread
-void BSEngine::startRecording(const juce::File& file)
-{
+void BSEngine::startRecording(const juce::File &file) {
     // stop current writing that may be happening
     stop();
-    
+
     // wee check to make sure the engine has variables somewhat
-    if (sampleRate > 0)
-    {
+    if (sampleRate > 0) {
         // delete the file passed, to make sure its empty
         file.deleteFile();
 
         // Create an OutputStream to write to our destination file
-        if (auto fileStream = std::unique_ptr<juce::FileOutputStream> (file.createOutputStream()))
-        {
+        if (auto fileStream = std::unique_ptr<juce::FileOutputStream>(file.createOutputStream())) {
             // Now create a WAV writer object that writes to our output stream
             juce::FlacAudioFormat flacFormat;
-            if (auto writer = flacFormat.createWriterFor(fileStream.get(), sampleRate, m_numInputChannels, 16, {}, 0))
-            {
+            if (auto writer = flacFormat.createWriterFor(fileStream.get(), sampleRate,
+                                                         m_numInputChannels, 16, {}, 0)) {
                 fileStream.release();  // (passes responsibility for deleting the stream to the writer object that is now using it)
 
                 // Now we'll create one of these helper objects which will act as a FIFO buffer, and will
                 // write the data to disk on our background thread.
-                threadedWriter.reset (new juce::AudioFormatWriter::ThreadedWriter (writer, backgroundThread, 12000));
+                threadedWriter.reset(
+                        new juce::AudioFormatWriter::ThreadedWriter(writer, backgroundThread,
+                                                                    12000));
 
                 // And now, swap over our active writer pointer so that the audio callback will start using it..
                 const juce::ScopedLock sl(writerLock);
@@ -77,8 +75,7 @@ void BSEngine::startRecording(const juce::File& file)
 }
 
 // Stop writing to disk
-void BSEngine::stop()
-{
+void BSEngine::stop() {
     // First, clear this pointer to stop the audio callback from using our writer object..
     {
         const juce::ScopedLock sl(writerLock);
@@ -92,50 +89,49 @@ void BSEngine::stop()
 }
 
 // Simple checker function for writing
-bool BSEngine::isRecording()
-{
+bool BSEngine::isRecording() {
     return activeWriter.load() != nullptr;
 }
 
 // Audiocallback is where the processing of this library happens
-void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples)
-{
+void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels,
+                                     float **outputChannelData, int numOutputChannels,
+                                     int numSamples) {
     // wrap incoming data, no allocations/copies, just references input data!
-    juce::AudioBuffer<float> inputBuffer(const_cast<float**>(inputChannelData), numInputChannels, numSamples);
-    juce::AudioBuffer<float> outBuffer(numOutputChannels, numSamples);  // add all data for output to the outBuffer
+    juce::AudioBuffer<float> inputBuffer(const_cast<float **>(inputChannelData), numInputChannels,
+                                         numSamples);
+    juce::AudioBuffer<float> outBuffer(numOutputChannels,
+                                       numSamples);  // add all data for output to the outBuffer
     juce::MidiBuffer midiBuffer;  // an empty midiMessage buffer to shut the effect processor up
     m_numInputChannels = numInputChannels;
     m_throttleAudioCallbackCycles = sampleRate / numSamples / 60;
-    int currentLatency = m_countInSamples + m_inputLatency + m_outputLatency + (2*numSamples);
-    
+    int currentLatency = m_countInSamples + m_inputLatency + m_outputLatency + (2 * numSamples);
+
     // clear any leftovers or junk
     outBuffer.clear();
     midiBuffer.clear();
-    
+
     // input level value to emit
     m_currentInputLevel = inputBuffer.getMagnitude(0, numSamples);
-    
+
     // override the latency value
     if (m_manualLatencyOverride)
-        currentLatency = m_countInSamples + m_manualLatency + (2*numSamples);
+        currentLatency = m_countInSamples + m_manualLatency + (2 * numSamples);
 
     // set input gain, if values is somewhat reasnoble
     if (m_inputGain >= 0.0f && m_inputGain <= 2.0f)
         inputBuffer.applyGain(m_inputGain);
 
     // Record Track branch
-    if (recordTrack && maxFileLengthSamples > m_inputBufferPos - currentLatency)
-    {
+    if (recordTrack && maxFileLengthSamples > m_inputBufferPos - currentLatency) {
         // bufferpos is more than total internal latency and the count in, to account for latency.
-        if (activeWriter.load() != nullptr && (m_inputBufferPos + numSamples) >= currentLatency)
-        {
+        if (activeWriter.load() != nullptr && (m_inputBufferPos + numSamples) >= currentLatency) {
             // countin complete callback
-            if (countInFinishedCallbackPointer != nullptr)
-            {
-                countInFinishedCallbackPointer->countInFinished();
-                countInFinishedCallbackPointer = nullptr;
+            if (countInFinishedCallback != nullptr) {
+                countInFinishedCallback();
+                countInFinishedCallback = nullptr;
             }
-            
+
             // get the number samples to write
             int inputPosInBlock = juce::jmax(currentLatency - m_inputBufferPos, 0);
             int blockSize = numSamples - inputPosInBlock;
@@ -143,11 +139,11 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
             littleBuffer.copyFrom(0, 0, inputBuffer, 0, inputPosInBlock, blockSize);
             // write that to disk
             activeWriter.load()->write(littleBuffer.getArrayOfReadPointers(), blockSize);
-            
+
             // advance the write samples counter
             m_writeNumSamples += littleBuffer.getNumSamples();
             trackOutputLevels[currentTrackNumber] = littleBuffer.getMagnitude(0, blockSize);
-            
+
 //            // if reasnoble monitoring gain value, apply it
 //            if (m_inputMonitoringGain <= 2 && m_inputMonitoringGain >= 0)
 //                inputBuffer.applyGain(m_inputMonitoringGain);
@@ -167,32 +163,30 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
 
         // advance input buffer position
         m_inputBufferPos += numSamples;
-        
+
         // stop the recording if beyond max length
-        if (maxFileLengthSamples <=  m_inputBufferPos - currentLatency)
+        if (maxFileLengthSamples <= m_inputBufferPos - currentLatency)
             stopRecording();
     }
 
     // Playing a single track branch
-    if (playTrack)
-    {
-        Track* currentTrack = trackArray.getReference(currentTrackNumber);
-        juce::AudioBuffer<float>* bufferPtr = currentTrack->getCurrentTakeBufferPointer();
+    if (playTrack) {
+        Track *currentTrack = trackArray.getReference(currentTrackNumber);
+        juce::AudioBuffer<float> *bufferPtr = currentTrack->getCurrentTakeBufferPointer();
         juce::AudioBuffer<float> effectBuffer(2, numSamples);
         juce::AudioBuffer<float> mixBuffer(2, numSamples);
         float gain = currentTrack->gain;
         int bufferPos;
-        
+
         if (currentTrack->getLoopMode())
             bufferPos = currentTrack->getLoopBufferPos();
         else
             bufferPos = m_outputBufferPos;
-        
-        // track scope lock
-        const juce::ScopedLock myScopedLock (currentTrack->objectLock);
 
-        if (bufferPtr->getNumSamples() > bufferPos + numSamples)
-        {
+        // track scope lock
+        const juce::ScopedLock myScopedLock(currentTrack->objectLock);
+
+        if (bufferPtr->getNumSamples() > bufferPos + numSamples) {
             // buffers are always stereo. if the input file was mono, channel 0 was copied to channel 1 when read
             // if mono output, the buffers should ignore panning and half gain
             // if stereo output, the buffers should be full gain but have pannig applied.
@@ -200,40 +194,42 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
             mixBuffer.copyFrom(0, 0, *bufferPtr, 0, bufferPos, numSamples);
             mixBuffer.copyFrom(1, 0, *bufferPtr, 1, bufferPos, numSamples);
             mixBuffer.applyGain(1.0f - currentTrack->getMixValue());
-            
+
             // mono output
-            if (numOutputChannels < 2)
-            {
+            if (numOutputChannels < 2) {
                 // both channels to mono channel. ignore panning and half the gain
-                    effectBuffer.copyFrom(0, 0, *bufferPtr, 0, bufferPos, numSamples);
-                    effectBuffer.copyFrom(1, 0, *bufferPtr, 1, bufferPos, numSamples);
-                    currentTrack->processorGraph->processBlock(effectBuffer, midiBuffer);
-                    mixBuffer.addFrom(0, 0, effectBuffer, 0, 0, numSamples, currentTrack->getMixValue());
-                    mixBuffer.addFrom(1, 0, effectBuffer, 1, 0, numSamples, currentTrack->getMixValue());
-                    outBuffer.addFrom(0, 0, mixBuffer, 0, 0, numSamples, gain/2);
-                    outBuffer.addFrom(0, 0, mixBuffer, 1, 0, numSamples, gain/2);
-            }
-            else
-            {
+                effectBuffer.copyFrom(0, 0, *bufferPtr, 0, bufferPos, numSamples);
+                effectBuffer.copyFrom(1, 0, *bufferPtr, 1, bufferPos, numSamples);
+                currentTrack->processorGraph->processBlock(effectBuffer, midiBuffer);
+                mixBuffer.addFrom(0, 0, effectBuffer, 0, 0, numSamples,
+                                  currentTrack->getMixValue());
+                mixBuffer.addFrom(1, 0, effectBuffer, 1, 0, numSamples,
+                                  currentTrack->getMixValue());
+                outBuffer.addFrom(0, 0, mixBuffer, 0, 0, numSamples, gain / 2);
+                outBuffer.addFrom(0, 0, mixBuffer, 1, 0, numSamples, gain / 2);
+            } else {
                 // stereo output
-                   effectBuffer.copyFrom(0, 0, *bufferPtr, 0, bufferPos, numSamples);
-                   effectBuffer.copyFrom(1, 0, *bufferPtr, 1, bufferPos, numSamples);
-                   currentTrack->processorGraph->processBlock(effectBuffer, midiBuffer);
-                   mixBuffer.addFrom(0, 0, effectBuffer, 0, 0, numSamples, currentTrack->getMixValue());
-                   mixBuffer.addFrom(1, 0, effectBuffer, 1, 0, numSamples, currentTrack->getMixValue());
-                   outBuffer.addFrom(0, 0, mixBuffer, 0, 0, numSamples, gain * currentTrack->panChannelGainArray.getUnchecked(0));
-                   outBuffer.addFrom(1, 0, mixBuffer, 1, 0, numSamples, gain * currentTrack->panChannelGainArray.getUnchecked(1));
+                effectBuffer.copyFrom(0, 0, *bufferPtr, 0, bufferPos, numSamples);
+                effectBuffer.copyFrom(1, 0, *bufferPtr, 1, bufferPos, numSamples);
+                currentTrack->processorGraph->processBlock(effectBuffer, midiBuffer);
+                mixBuffer.addFrom(0, 0, effectBuffer, 0, 0, numSamples,
+                                  currentTrack->getMixValue());
+                mixBuffer.addFrom(1, 0, effectBuffer, 1, 0, numSamples,
+                                  currentTrack->getMixValue());
+                outBuffer.addFrom(0, 0, mixBuffer, 0, 0, numSamples,
+                                  gain * currentTrack->panChannelGainArray.getUnchecked(0));
+                outBuffer.addFrom(1, 0, mixBuffer, 1, 0, numSamples,
+                                  gain * currentTrack->panChannelGainArray.getUnchecked(1));
             }
 
-            trackOutputLevels[currentTrackNumber] = bufferPtr->getMagnitude(bufferPos, numSamples) * gain;
+            trackOutputLevels[currentTrackNumber] =
+                    bufferPtr->getMagnitude(bufferPos, numSamples) * gain;
 
+        } else if (playTrackFinishedCallback != nullptr && !currentTrack->getLoopMode()) {
+            playTrackFinishedCallback();
+            playTrackFinishedCallback = nullptr;
         }
-        else if (playTrackFinishedCallbackPointer != nullptr && !currentTrack->getLoopMode())
-        {
-            playTrackFinishedCallbackPointer->playTrackFinishedCallback();
-            playTrackFinishedCallbackPointer = nullptr;
-        }
-        
+
         // move the loop buffer pos forward if buffer big enough, else reset to 0
         if (bufferPtr->getNumSamples() > bufferPos + numSamples)
             currentTrack->setLoopBufferPos(bufferPos + numSamples);
@@ -241,52 +237,48 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
             currentTrack->setLoopBufferPos(0);
     }
 
-    
-    // Playback of multiple different tracks, summed to output
-    if (multitrackPlay)
-    {
-        // make sure the count in has passed
-        if (m_outputBufferPos > m_countInSamples)
-        {
 
-            juce::AudioBuffer<float> summedBuffer(2, numSamples);  // sum all audio data from each track buffer to this buffer
-            long bufferPos = m_outputBufferPos-m_countInSamples;  // account for the sample delay due to count in
+    // Playback of multiple different tracks, summed to output
+    if (multitrackPlay) {
+        // make sure the count in has passed
+        if (m_outputBufferPos > m_countInSamples) {
+
+            juce::AudioBuffer<float> summedBuffer(2,
+                                                  numSamples);  // sum all audio data from each track buffer to this buffer
+            long bufferPos = m_outputBufferPos -
+                             m_countInSamples;  // account for the sample delay due to count in
             int numLoopedTracks = 0;
             int numFinishedBuffers = 0;
             summedBuffer.clear();
 
             // recordtrack is false, so countInFinishedCallback has not been sent by the recording process
-            if (!recordTrack && countInFinishedCallbackPointer != nullptr)
-            {
-                countInFinishedCallbackPointer->countInFinished();
-                countInFinishedCallbackPointer = nullptr;
+            if (!recordTrack && countInFinishedCallback != nullptr) {
+                countInFinishedCallback();
+                countInFinishedCallback = nullptr;
             }
 
             // for each track in engine track array
-            for (int i = 0; i < trackArray.size(); i++)
-            {
-                Track* currentTrack = trackArray.getReference(i);
-                juce::AudioBuffer<float>* bufferPtr = currentTrack->getCurrentTakeBufferPointer();
-                juce::AudioBuffer<float> effectBuffer(2, numSamples);  // buffer for writing effect chain to
-                juce::AudioBuffer<float> mixBuffer(2, numSamples);  // buffer for writing mix of wet and dry signal to
+            for (int i = 0; i < trackArray.size(); i++) {
+                Track *currentTrack = trackArray.getReference(i);
+                juce::AudioBuffer<float> *bufferPtr = currentTrack->getCurrentTakeBufferPointer();
+                juce::AudioBuffer<float> effectBuffer(2,
+                                                      numSamples);  // buffer for writing effect chain to
+                juce::AudioBuffer<float> mixBuffer(2,
+                                                   numSamples);  // buffer for writing mix of wet and dry signal to
                 juce::Array<float> panGainArray = currentTrack->panChannelGainArray;
                 float gain = currentTrack->gain;
                 float currentMixValue = currentTrack->getMixValue();
-                const juce::ScopedLock myScopedLock (currentTrack->objectLock);  // track scope lock
+                const juce::ScopedLock myScopedLock(currentTrack->objectLock);  // track scope lock
 
                 // if the track is looped and the playhead is not beyond a max length
-                if (currentTrack->getLoopMode() && bufferPos < maxFileLengthSamples)
-                {
+                if (currentTrack->getLoopMode() && bufferPos < maxFileLengthSamples) {
                     bufferPos = currentTrack->getLoopBufferPos();
                     numLoopedTracks++;
+                } else {
+                    bufferPos = m_outputBufferPos - m_countInSamples;
                 }
-                else
-                {
-                    bufferPos = m_outputBufferPos-m_countInSamples;
-                }
-                
-                if (bufferPtr->getNumSamples() > bufferPos + numSamples)
-                {
+
+                if (bufferPtr->getNumSamples() > bufferPos + numSamples) {
                     // buffers are always stereo. if the input file was mono, channel 0 was copied to channel 1.
 
                     // fill the effect buffer with the input data (will always be stereo)
@@ -301,31 +293,30 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
                     // process block through effect chain
                     currentTrack->processorGraph->processBlock(effectBuffer, midiBuffer);
                     // add processed audio to mix buffer with wet mix value
-                    mixBuffer.addFrom(0, 0, effectBuffer, 0, 0, effectBuffer.getNumSamples(), currentMixValue);
-                    mixBuffer.addFrom(1, 0, effectBuffer, 1, 0, effectBuffer.getNumSamples(), currentMixValue);
+                    mixBuffer.addFrom(0, 0, effectBuffer, 0, 0, effectBuffer.getNumSamples(),
+                                      currentMixValue);
+                    mixBuffer.addFrom(1, 0, effectBuffer, 1, 0, effectBuffer.getNumSamples(),
+                                      currentMixValue);
 
                     // if mono output, the buffers should ignore panning and half gain
                     // if stereo output, the buffers should be full gain but have pannig applied
-                    if (numOutputChannels < 2)
-                    {
+                    if (numOutputChannels < 2) {
                         // mono output
                         // add mixBuffer to outbut buffer. both channels to mono channel. ignore panning and half the gain
                         outBuffer.addFrom(0, 0, mixBuffer, 0, 0, mixBuffer.getNumSamples(), 0.5f);
                         outBuffer.addFrom(0, 0, mixBuffer, 1, 0, mixBuffer.getNumSamples(), 0.5f);
 
-                    }
-                    else
-                    {
+                    } else {
                         // stereo output
                         // add mixBuffer to output buffer with panGain
-                        outBuffer.addFrom(0, 0, mixBuffer, 0, 0, mixBuffer.getNumSamples(), panGainArray.getUnchecked(0));
-                        outBuffer.addFrom(1, 0, mixBuffer, 1, 0, mixBuffer.getNumSamples(), panGainArray.getUnchecked(1));
+                        outBuffer.addFrom(0, 0, mixBuffer, 0, 0, mixBuffer.getNumSamples(),
+                                          panGainArray.getUnchecked(0));
+                        outBuffer.addFrom(1, 0, mixBuffer, 1, 0, mixBuffer.getNumSamples(),
+                                          panGainArray.getUnchecked(1));
                     }
 
                     trackOutputLevels[i] = mixBuffer.getMagnitude(0, numSamples);
-                }
-                else
-                {
+                } else {
                     numFinishedBuffers++;  // this buffer has less samples than current bufferPos, so its finished.
                 }
 
@@ -335,10 +326,9 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
                 else
                     currentTrack->setLoopBufferPos(0);
             }
-            
+
             // all buffers are finished playing
-            if (numLoopedTracks == 0 && numFinishedBuffers == trackArray.size())
-            {
+            if (numLoopedTracks == 0 && numFinishedBuffers == trackArray.size()) {
                 multitrackFinished = true;
                 multitrackPlay = false;
             }
@@ -346,16 +336,15 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
     }
 
     // Play Mixdown buffer branch
-    if (mixdownPlay)
-    {
+    if (mixdownPlay) {
         if (mixdownBuffer.getNumSamples() > m_outputBufferPos + numSamples)
             for (int ch = 0; ch < numOutputChannels; ch++)
-                outBuffer.addFrom(ch, 0, mixdownBuffer, ch, m_outputBufferPos, numSamples);  // mixdownBuffer always 2 channels
+                outBuffer.addFrom(ch, 0, mixdownBuffer, ch, m_outputBufferPos,
+                                  numSamples);  // mixdownBuffer always 2 channels
     }
 
     // metronome click branch
-    if (metronomeStatus && !engineStopped)
-    {
+    if (metronomeStatus && !engineStopped) {
         int currentMetronomeModulo = -1;
 
         // if recording track, its the input buffer pos that is increasing not output buffer pos!
@@ -364,10 +353,8 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
         else
             currentMetronomeModulo = m_outputBufferPos % samplesPerBeat;
 
-        if (currentMetronomeModulo >= 0)
-        {
-            if (currentMetronomeModulo < metronomeModulo || currentMetronomeModulo == 0)
-            {
+        if (currentMetronomeModulo >= 0) {
+            if (currentMetronomeModulo < metronomeModulo || currentMetronomeModulo == 0) {
                 if (emitterListeners) eventWrapper->sendOnMetronomeBeat();
                 m_metronomeBufferPos = 0;
                 m_metronomeToggle = true;
@@ -379,29 +366,29 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
 
         if (m_metronomeToggle) {
             juce::AudioBuffer<float> metronomeSound;
-            if (m_metronomoeCounter == 0)
-            {
+            if (m_metronomoeCounter == 0) {
                 metronomeSound.makeCopyOf(metronomeUpBuffer);
-            }
-            else
-            {
+            } else {
                 metronomeSound.makeCopyOf(metronomeDownBuffer);
             }
-            
+
             if (metronomeSound.getNumSamples() > m_metronomeBufferPos) {
 
                 // mono output
-                if (numOutputChannels < 2)
-                {
+                if (numOutputChannels < 2) {
                     // both channels to mono channel, half the gain
-                    for (int ch = 0; ch < metronomeSound.getNumChannels() && metronomeSound.getNumSamples() > m_metronomeBufferPos + numSamples; ch++)
-                        outBuffer.addFrom(0, 0, metronomeSound, ch, m_metronomeBufferPos, numSamples, m_metronomeLevel);
-                }
-                else
-                {
+                    for (int ch = 0; ch < metronomeSound.getNumChannels() &&
+                                     metronomeSound.getNumSamples() >
+                                     m_metronomeBufferPos + numSamples; ch++)
+                        outBuffer.addFrom(0, 0, metronomeSound, ch, m_metronomeBufferPos,
+                                          numSamples, m_metronomeLevel);
+                } else {
                     // stereo output
-                    for (int ch = 0; ch < metronomeSound.getNumChannels() && metronomeSound.getNumSamples() > m_metronomeBufferPos + numSamples; ch++)
-                        outBuffer.addFrom(ch, 0, metronomeSound, ch, m_metronomeBufferPos, numSamples, m_metronomeLevel);
+                    for (int ch = 0; ch < metronomeSound.getNumChannels() &&
+                                     metronomeSound.getNumSamples() >
+                                     m_metronomeBufferPos + numSamples; ch++)
+                        outBuffer.addFrom(ch, 0, metronomeSound, ch, m_metronomeBufferPos,
+                                          numSamples, m_metronomeLevel);
                 }
 
                 m_metronomeBufferPos += numSamples;
@@ -422,8 +409,7 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
     outBuffer.addFrom(1, 0, mainEffectBuffer, 1, 0, numSamples, mainBus->getMixValue());
 
     // set main pan for stereo output
-    if (numOutputChannels > 1)
-    {
+    if (numOutputChannels > 1) {
         outBuffer.applyGain(0, 0, numSamples, mainPanChannelGainArray.getReference(0));
         outBuffer.applyGain(1, 0, numSamples, mainPanChannelGainArray.getReference(1));
     }
@@ -434,25 +420,22 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
     // current progress for emitting
     int currentMicros;
     if (recordTrack)
-        currentMicros = (float) m_inputBufferPos/sampleRate * 1000000.00;
+        currentMicros = (float) m_inputBufferPos / sampleRate * 1000000.00;
     else
-        currentMicros = (float) m_outputBufferPos/sampleRate * 1000000.00;
+        currentMicros = (float) m_outputBufferPos / sampleRate * 1000000.00;
 
     // call multitrack finished callback
-    if (multitrackFinished && multitrackPlayFinishedCallbackPointer != nullptr)
-    {
-        multitrackPlayFinishedCallbackPointer->multitrackPlayFinishedCallback();
-        multitrackPlayFinishedCallbackPointer = nullptr;
+    if (multitrackFinished && multitrackPlayFinishedCallback != nullptr) {
+        multitrackPlayFinishedCallback();
+        multitrackPlayFinishedCallback = nullptr;
     }
-    
+
     // throttle emitting
     m_throttleCount++;  // always should iterate, even on first cycle, because computer maths.
-    if (m_throttleCount >= m_throttleAudioCallbackCycles)
-    {
+    if (m_throttleCount >= m_throttleAudioCallbackCycles) {
         m_throttleCount = 0;
         // dont't send if no listeners or JS will complain
-        if (emitterListeners)
-        {
+        if (emitterListeners) {
             // emit everything to javascript through the emit wrapper
             eventWrapper->sendTrackOutputLevels(trackOutputLevels);
             eventWrapper->sendPlaybackProgress(currentMicros);
@@ -479,10 +462,8 @@ void BSEngine::audioDeviceIOCallback(const float **inputChannelData, int numInpu
             outputChannelData[ch][sample] = readPtrs[ch][sample];
 }
 
-void BSEngine::stopRecording()
-{
-    if (recordTrack && engineActive)
-    {
+void BSEngine::stopRecording() {
+    if (recordTrack && engineActive) {
         startTimer(5);
         stop();
     }
@@ -495,40 +476,35 @@ void BSEngine::stopRecording()
     setInputBufferPos(0);
     setOutputBufferPos(0);
     m_countInSamples = 0;
-    
-    for (auto track : trackArray)
+
+    for (auto track: trackArray)
         track->resetEffects();
 }
 
-void BSEngine::clearTrackTakes(int trackNum)
-{
-    Track* track = trackArray.getReference(trackNum);
+void BSEngine::clearTrackTakes(int trackNum) {
+    Track *track = trackArray.getReference(trackNum);
     track->removeAllTakes();
     track->setCurrentTakeNumber(0);
-    juce::String trackDirString("track"+juce::String(trackNum));
+    juce::String trackDirString("track" + juce::String(trackNum));
     juce::File trackDir = engine->tempDirectory.getChildFile(trackDirString);
     trackDir.deleteRecursively();
 }
 
-void BSEngine::deleteTake(int trackNum, int takeNum)
-{
+void BSEngine::deleteTake(int trackNum, int takeNum) {
     trackArray.getReference(trackNum)->removeTake(takeNum);
 }
 
-void BSEngine::deleteTrack(int trackNum)
-{
+void BSEngine::deleteTrack(int trackNum) {
     clearTrackTakes(trackNum);
     trackArray.getReference(trackNum)->resetTrack();
 }
 
 // Effects
-void BSEngine::removeTrackEffects(int trackNum)
-{
+void BSEngine::removeTrackEffects(int trackNum) {
     trackArray.getReference(trackNum)->removeEffects(sampleRate, bufferSize);
 }
 
-void BSEngine::addTrackEffect(int trackNum, std::string effectName)
-{
+void BSEngine::addTrackEffect(int trackNum, std::string effectName) {
     effectPreset effectPreset;
     if (effectName == "compressor") {
         effectPreset = compressorEffect();
@@ -548,8 +524,7 @@ void BSEngine::addTrackEffect(int trackNum, std::string effectName)
     trackArray.getReference(trackNum)->setCurrentEffectChain(effectPreset);
 }
 
-void BSEngine::addMainBusEffect(std::string effectName)
-{
+void BSEngine::addMainBusEffect(std::string effectName) {
     effectPreset effectPreset;
     if (effectName == "main") {
         effectPreset = mainBusEffect();
@@ -563,12 +538,10 @@ void BSEngine::addMainBusEffect(std::string effectName)
     mainBus->setCurrentEffectChain(effectPreset);
 }
 
-void BSEngine::resetMainBusEffect()
-{
+void BSEngine::resetMainBusEffect() {
     mainBus->removeEffects(sampleRate, bufferSize);
 }
 
-void BSEngine::setMixValueMainBusEffect(float mixValue)
-{
+void BSEngine::setMixValueMainBusEffect(float mixValue) {
     mainBus->setMixValue(mixValue);
 }

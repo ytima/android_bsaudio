@@ -1,13 +1,2 @@
 ninja: Entering directory `/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/.cxx/cmake/debug/arm64-v8a'
-[1/2] Building CXX object CMakeFiles/BSAudioEngine.dir/native-lib.cpp.o
-/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/src/main/cpp/native-lib.cpp:149:1: warning: control reaches end of non-void function [-Wreturn-type]
-}
-^
-/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/src/main/cpp/native-lib.cpp:239:1: warning: control reaches end of non-void function [-Wreturn-type]
-}
-^
-/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/src/main/cpp/native-lib.cpp:269:1: warning: control reaches end of non-void function [-Wreturn-type]
-}
-^
-3 warnings generated.
-[2/2] Linking CXX shared library /Users/developer/Documents/Native/android_lib/AndroidLib/android/app/build/intermediates/cmake/debug/obj/arm64-v8a/libBSAudioEngine.so
+ninja: no work to do.

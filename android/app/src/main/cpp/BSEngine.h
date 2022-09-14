@@ -153,10 +153,14 @@ class BSEngine : public juce::AudioIODeviceCallback,
     int writeBitdepth = 16;
 
     // Callback Pointers
-    CallbackWrapper* recordStoppedCallbackPointer = nullptr;
-    CallbackWrapper* playTrackFinishedCallbackPointer = nullptr;
-    CallbackWrapper* multitrackPlayFinishedCallbackPointer = nullptr;
-    CallbackWrapper* countInFinishedCallbackPointer = nullptr;
+//    CallbackWrapper* recordStoppedCallbackPointer = nullptr;
+    std::function<void (long ,int, std::string,std::vector<float>  )> recordingStoppedCallback = nullptr;
+//    CallbackWrapper* playTrackFinishedCallbackPointer = nullptr;
+    std::function<void ()> playTrackFinishedCallback = nullptr;
+//    CallbackWrapper* multitrackPlayFinishedCallbackPointer = nullptr;
+    std::function<void ()> multitrackPlayFinishedCallback = nullptr;
+//    CallbackWrapper* countInFinishedCallbackPointer = nullptr;
+    std::function<void ()> countInFinishedCallback = nullptr;
 
     // Event Emitting
     bool emitterListeners = false;  // set by front end if there is a listeners to the events

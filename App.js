@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -16,6 +16,7 @@ import {
   useColorScheme,
   View,
   NativeModules,
+  TouchableOpacity,
 } from 'react-native';
 
 import {
@@ -55,6 +56,7 @@ const Section = ({ children, title }) => {
 };
 
 const App = () => {
+  const [recorded, setRecorded] = useState(false)
   console.log('BSAudioEngine', BSAudioEngine)
   // console.log('NativeModules', NativeModules)
   useEffect(() => {
@@ -62,17 +64,33 @@ const App = () => {
       console.log('testCallLib', value)
     }
     setTimeout(() => {
-      BSAudioEngine.testCallLib(cb)
-      // BSAudioEngine.testCallLib()
+      // BSAudioEngine.testCallLib(cb)
+      // const res = BSAudioEngine.BSInitialiseDevice()
+      // console.log('BSAudioEngine.BSInitialiseDevice', res)
+      const res = BSAudioEngine.BSInitDevice()
+      console.log('BSAudioEngine.BSInitDevice', res)
     }, 1000)
-    
+
   }, [])
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
-
+  const handleRecord = () => {
+    if (!recorded) {
+      // long startAtMicros, int currentTrackNumber, int currentTakeNumber, Callback callback
+      // recordedLength, sampleRate, filePath, waveformArray
+      BSAudioEngine.BSRecordTrack_new('0', 0, 0, (recordedLength, sampleRate, filePath, waveformArray) => console.log('BSAudioEngine.BSRecordTrack', recordedLength, sampleRate, filePath, waveformArray))
+      setRecorded(prev => !prev)
+      console.log('BSAudioEngine.BSRecordTrack')
+    } else {
+      BSAudioEngine.BSStop_new()
+    }
+  }
+  const handlePlay = () => {
+    BSAudioEngine.BSMultitrackPlay("0", (res) => console.log('BSMultitrackPlay', res))
+  }
   return (
     <SafeAreaView style={backgroundStyle}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
@@ -80,6 +98,12 @@ const App = () => {
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
         <Header />
+        <TouchableOpacity onPress={handleRecord} style={{ width: 200, height: 50, backgroundColor: 'yellow' }}>
+
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handlePlay} style={{ width: 200, height: 50, backgroundColor: 'green' }}>
+
+        </TouchableOpacity>
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,

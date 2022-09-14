@@ -1,5 +1,6 @@
 package com.androidlib;
 
+
 import android.util.Log;
 
 import com.facebook.react.bridge.NativeModule;
@@ -7,8 +8,9 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import java.util.function.Function;
 import com.facebook.react.bridge.Callback;
+
+import java.util.ArrayList;
 
 public class BSEngineModule extends ReactContextBaseJavaModule {
     BSEngineModule(ReactApplicationContext context) {
@@ -25,27 +27,20 @@ public class BSEngineModule extends ReactContextBaseJavaModule {
     }
 
 
-    @ReactMethod
-    public void testModule(String name, String location) {
-        Log.d("CalendarModule", "Create event called with name: " + name
-                + " and location: " + location);
-    }
-
-    public native void BSTEST();
-
-    public native void testtestFunct();
-
     public native void BSSetMetronomeSound(String absoluteFilePathDown, String absoluteFilePathUp);
 
-    //    public native void BSWriteMixdownFlac(  callback: Any/*CallbackWrapper*/)
+    public native void BSWriteMixdownFlac();
+
     public native void BSReadMixdownFlac();
 
     // a call to prove that we can get the device initilised.
 // Will be redundatnt and should be ignored when there are event and callback wrappers working for android
     public native boolean BSInitialiseDevice();
 
-    //    public native BSRecordTrack( startAtMicros: Long,   currentTrackNumber: Int,  currentTakeNumber: Int,callback: Any/*CallbackWrapper*/)
-//    public native BSPlayTrack(  startAtMicros: Long,   currentTrackNumber: Int,   currentTakeNumber: Int, callback: Any/*CallbackWrapper*/)
+    public native void BSRecordTrack(long startAtMicros, int currentTrackNumber, int currentTakeNumber);
+
+    public native void BSPlayTrack(long startAtMicros, int currentTrackNumber, int currentTakeNumber);
+
     public native void BSSetTake(int trackNumber, int takeNumber);
 
     public native void BSSetLoopMode(int trackNum, boolean status);
@@ -62,8 +57,10 @@ public class BSEngineModule extends ReactContextBaseJavaModule {
 
     public native void BSDeleteTrack(int trackNum);
 
-    //    external fun BSMultitrackPlay( startAtMicros: Long, callback: Any/*CallbackWrapper*/)
-//    external fun BSMultitrackRecord( startAtMicros: Long,  currentTrackNumber: Int,  currentTakeNumber: Int, callback: Any/*CallbackWrapper*/)
+    public native void BSMultitrackPlay(long startAtMicros);
+
+    public native void BSMultitrackRecord(long startAtMicros, int currentTrackNumber, int currentTakeNumber);
+
     public native void BSPlayMixdown(long startAtMicros);
 
     public native void BSStop();
@@ -86,12 +83,16 @@ public class BSEngineModule extends ReactContextBaseJavaModule {
 
     public native boolean BSMixdown();
 
-    //    public native void BSAnalyseTrack( absoluteFilePath: String, CallbackWrapper* callback)
+    public native void BSAnalyseTrack(String absoluteFilePath);
+
     public native void BSSetCompressionValues(int sampleRate, int bitDepth, int compressionValue);
 
-    //    public native void BSCompressFiles(CallbackWrapper* callback)
-//    public native void BSCompressFile(  absoluteFilePath: String, CallbackWrapper* callback)
-//    public native BSReadFile(  filePath: String,  trackNum: Int,  takeNum: Int,   sampleLoop: Boolean, CallbackWrapper* callback)
+    public native void BSCompressFiles();
+
+    public native void BSCompressFile(String absoluteFilePath);
+
+    public native void BSReadFile(String filePath, int trackNum, int takeNum, boolean sampleLoop);
+
     public native boolean BSMonitor();
 
     public native void BSSetBPM(float bpm);
@@ -102,7 +103,8 @@ public class BSEngineModule extends ReactContextBaseJavaModule {
 
     public native void BSSetHeadphonesConnected(boolean connected);
 
-    //    public native void BSSetCountInBars( bars: Int, CallbackWrapper *callback)
+    public native void BSSetCountInBars( int bars);
+
     public native void BSSetMetronomeTimeSignature(int nominator, int denominator);
 
     public native void BSListener(boolean listener);
@@ -124,35 +126,144 @@ public class BSEngineModule extends ReactContextBaseJavaModule {
     public native void BSSetManualLatency(int samples);
 
 
-
-//    Function<Integer,Void>   varCallbackOne;
-    Callback   varCallbackOne;
-    void methodVarCallbackOne(int a) {
-//        varCallbackOne.apply(a);
-        varCallbackOne.invoke(a);
+    void recordingStoppedCallback(long recordedLength,
+                                  int sampleRate,
+                                  String filePath,
+                                  ArrayList waveformArray) {
+        recordingStoppedCallback.invoke(recordedLength, sampleRate, filePath, waveformArray);
     }
 
-
-
-//    @ReactMethod fun setCallback( callback: (test: String) -> Unit) {
-//        varCallback = callback;
-//    }
-
-//    @ReactMethod void testCallLib(  Function<Integer,Void> callback)
-    @ReactMethod void testCallLib(Callback callBack) {
-        Log.d("BSEngineModule", "---140-------");
-        varCallbackOne = callBack;
-//        varCallbackOne = (Integer a)-> {
-//            Log.d("BSEngineModule", "---144---$a----" + a);
-////            callBack.invoke(a);
-//            return null;
-//        };
-        Log.d("BSEngineModule", "---147-------");
-
-        testtestFunct();
+    void analyseTrackCallback(long fileLengthSamples,
+                              int sampleRate,
+                              int bitDepth,
+                              long fileLengthMicros) {
+        analyseTrackCallback.invoke(fileLengthSamples, sampleRate, bitDepth, fileLengthMicros);
     }
 
+    ;
+
+    void compressFilesCallback(ArrayList absolutePaths){
+        compressFilesCallback.invoke(absolutePaths);
+    }
+
+    void writeMixdownCallback(String absolutePath) {
+        writeMixdownCallback.invoke(absolutePath);
+    }
+
+    void compressFileCallback(String absolutePath){
+        compressFileCallback.invoke(absolutePath);
+    };
+
+    void readFileCallback(long recordedLength,
+                          int sampleRate,
+                          String filePath,
+                          ArrayList<Float> waveformArray){
+        readFileCallback.invoke(recordedLength, sampleRate, filePath, waveformArray);
+    };
+
+    void playTrackFinishedCallback() {
+        playTrackFinishedCallback.invoke();
+    }
+
+    ;
+
+    void multitrackPlayFinishedCallback() {
+        multitrackPlayFinishedCallback.invoke();
+    }
+
+    ;
+
+    void countInFinished(){
+        countInFinished.invoke();
+    };
+
+
+    Callback recordingStoppedCallback;
+    Callback analyseTrackCallback;
+    Callback compressFilesCallback;
+    Callback writeMixdownCallback;
+    Callback compressFileCallback;
+    Callback readFileCallback;
+    Callback playTrackFinishedCallback;
+    Callback multitrackPlayFinishedCallback;
+    Callback countInFinished;
+
+    @ReactMethod
+    void BSWriteMixdownFlac(Callback callback) {
+        writeMixdownCallback = callback;
+        BSWriteMixdownFlac();
+    }
+
+    @ReactMethod
+    void BSRecordTrack_new(String startAtMicros, int currentTrackNumber, int currentTakeNumber, Callback callback) {
+        long l = Long.parseLong(startAtMicros);
+        Log.d("BSAudioEngine", "BSRecordTrack " + l);
+        recordingStoppedCallback = callback;
+        BSRecordTrack(l, currentTrackNumber, currentTakeNumber);
+        Log.d("BSAudioEngine", "BSRecordTrack after");
+    }
+
+    @ReactMethod
+    void BSMultitrackRecord(long startAtMicros, int currentTrackNumber, int currentTakeNumber, Callback callback) {
+        recordingStoppedCallback = callback;
+        BSMultitrackRecord(startAtMicros, currentTrackNumber, currentTakeNumber);
+    }
+
+    @ReactMethod
+    void BSPlayTrack(long startAtMicros, int currentTrackNumber, int currentTakeNumber, Callback callback) {
+        playTrackFinishedCallback = callback;
+        BSPlayTrack(startAtMicros, currentTrackNumber, currentTakeNumber);
+    }
+
+    @ReactMethod
+    void BSMultitrackPlay(String startAtMicros, Callback callback) {
+        long l = Long.parseLong(startAtMicros);
+        Log.d("BSAudioEngine", "BSRecordTrack " + l);
+        multitrackPlayFinishedCallback = callback;
+        BSMultitrackPlay(l);
+    }
+
+    @ReactMethod
+    void BSAnalyseTrack(String absoluteFilePath, Callback callback) {
+        analyseTrackCallback = callback;
+        BSAnalyseTrack(absoluteFilePath);
+    }
+
+    @ReactMethod
+    void BSCompressFiles(Callback callback) {
+        compressFilesCallback = callback;
+        BSCompressFiles();
+    }
+
+    @ReactMethod
+    void BSCompressFile(String absoluteFilePath,Callback callback) {
+        compressFileCallback = callback;
+        BSCompressFile(absoluteFilePath);
+    }
+
+    @ReactMethod
+    void BSReadFile(String filePath, int trackNum, int takeNum, boolean sampleLoop,Callback callback) {
+        readFileCallback = callback;
+        BSReadFile(filePath, trackNum, takeNum, sampleLoop );
+    }
+
+    @ReactMethod
+    void BSSetCountInBars( int bars, Callback callback) {
+        countInFinished = callback;
+        BSSetCountInBars(bars );
+    }
+    @ReactMethod
+    boolean BSInitDevice( ) {
+        boolean r = BSInitialiseDevice();
+        Log.d("BSAudioEngine", "result" + r);
+        return r;
+    }
+    @ReactMethod
+    void BSStop_new( ) {
+        Log.d("BSAudioEngine", "BSStop_new");
+        BSStop();
+        Log.d("BSAudioEngine", "BSStop_new after");
+    }
 }
-
 
 

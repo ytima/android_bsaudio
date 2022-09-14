@@ -77,3 +77,4 @@
 6773	23865	1662544532	CMakeFiles/BSAudioEngine.dir/BSAudioEngine/lib/include/include_juce_audio_processors.cpp.o	4cdd384ce1065834
 9735	33823	1662544542	CMakeFiles/BSAudioEngine.dir/BSAudioEngine/lib/include/include_juce_gui_basics.cpp.o	eb50131983d5deba
 33824	36097	1662544544	/Users/developer/Documents/Native/android_lib/AndroidLib/android/app/build/intermediates/cmake/debug/obj/armeabi-v7a/libBSAudioEngine.so	b5099e14725e7024
+0	182	0	clean	7686dc2cf921d12f

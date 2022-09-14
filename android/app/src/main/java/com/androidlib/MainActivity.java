@@ -18,9 +18,8 @@ public class MainActivity extends ReactActivity {
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-
-    InitialiseJuce();
     super.onCreate(savedInstanceState);
+    InitialiseJuce();
   }
 
   static {
@@ -28,5 +27,6 @@ public class MainActivity extends ReactActivity {
   }
 
   public native Void InitialiseJuce();
+
 
 }

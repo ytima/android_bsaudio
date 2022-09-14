@@ -132,7 +132,7 @@ void stoppedRecordingCallback()
     std::string filePath = flacFilePathFromTrackNumber(engine->currentTrackNumber, engine->trackArray.getReference(engine->currentTrackNumber)->getCurrentTakeNumber()).getFullPathName().toStdString();
     // waveform array
     std::vector<float> waveformArray = engine->trackArray.getReference(engine->currentTrackNumber)->getWaveformArray();
-    engine->recordStoppedCallbackPointer->recordingStoppedCallback(reclen, sampleRate, filePath, waveformArray);
+    engine->recordingStoppedCallback(reclen, sampleRate, filePath, waveformArray);
 }
 
 long microsToSamples(long micros)
