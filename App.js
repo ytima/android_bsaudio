@@ -81,7 +81,9 @@ const App = () => {
     if (!recorded) {
       // long startAtMicros, int currentTrackNumber, int currentTakeNumber, Callback callback
       // recordedLength, sampleRate, filePath, waveformArray
-      BSAudioEngine.BSRecordTrack_new('0', 0, 0, (recordedLength, sampleRate, filePath, waveformArray) => console.log('BSAudioEngine.BSRecordTrack', recordedLength, sampleRate, filePath, waveformArray))
+      BSAudioEngine.BSRecordTrack_new('0', 0, 0, (recordedLength, sampleRate, filePath, waveformArray) => {
+        console.log('BSAudioEngine.BSRecordTrack', recordedLength, sampleRate, filePath, waveformArray)
+      })
       setRecorded(prev => !prev)
       console.log('BSAudioEngine.BSRecordTrack')
     } else {

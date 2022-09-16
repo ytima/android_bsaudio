@@ -129,13 +129,13 @@ Java_com_androidlib_BSEngineModule_BSRecordTrack(JNIEnv *env, jobject thiz,
                                                                                    int valueInt,
                                                                                    const std::string &valueString,
                                                                                    std::vector<float> valueVector) -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "recordingStoppedCallback",
-                                                  "(J;I;Ljava/lang/String;[F;)V");
+//      jclass cls_foo = (*env).GetObjectClass(thiz);
+//      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "recordingStoppedCallback",
+//                                                  "(J;I;Ljava/lang/String;[F;)V");
 
-      jstring jValue = (*env).NewStringUTF(valueString.c_str());
-      jfloatArray jfloatArrayValue = convertVectorFloatToJava(env, valueVector);
-      (*env).CallVoidMethod(thiz, mid_callback, valueLong, valueInt, jValue, jfloatArrayValue);
+//      jstring jValue = (*env).NewStringUTF(valueString.c_str());
+//      jfloatArray jfloatArrayValue = convertVectorFloatToJava(env, valueVector);
+//      (*env).CallVoidMethod(thiz, mid_callback, valueLong, valueInt, jValue, jfloatArrayValue);
   };
 
 
