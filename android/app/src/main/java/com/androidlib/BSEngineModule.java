@@ -9,8 +9,17 @@ import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.Callback;
+import com.facebook.react.bridge.WritableArray;
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableNativeArray;
+import com.facebook.react.bridge.WritableNativeMap;
+import com.google.gson.Gson;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class BSEngineModule extends ReactContextBaseJavaModule {
     BSEngineModule(ReactApplicationContext context) {
@@ -129,8 +138,12 @@ public class BSEngineModule extends ReactContextBaseJavaModule {
     void recordingStoppedCallback(long recordedLength,
                                   int sampleRate,
                                   String filePath,
-                                  ArrayList waveformArray) {
-        recordingStoppedCallback.invoke(recordedLength, sampleRate, filePath, waveformArray);
+                                  float[] waveformArray) throws JSONException {
+        Log.d("BSAudioEngine", "recordingStoppedCallback133");
+
+        String json = new Gson().toJson(waveformArray);
+
+        recordingStoppedCallback.invoke(Long.toString(recordedLength), sampleRate, filePath.toString(), json);
     }
 
     void analyseTrackCallback(long fileLengthSamples,

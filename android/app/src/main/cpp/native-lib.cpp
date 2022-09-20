@@ -3,6 +3,10 @@
 #include "BSInterface.h"
 
 
+JNIEnv *envLocalCopy = nullptr;
+jweak  weakRefInstance  ;
+jclass cls_foo;
+
 std::string convertJStringToStd(JNIEnv *env, jstring value) {
   jboolean isCopy = false;
   std::string newValue = env->GetStringUTFChars(value, &isCopy);
@@ -40,30 +44,52 @@ Java_com_androidlib_MainActivity_InitialiseJuce(
   juce::Thread::initialiseJUCE(env, activity);
 }
 
+//extern "C" JNIEXPORT void JNICALL
+//Java_com_androidlib_BSEngineModule_testtestFunct(
+//        JNIEnv *env, jobject thiz) {
+//
+//    std::function<void(int)> t = [&env, &thiz](int value) -> void {
+//        jclass cls_foo = envLocalCopy->GetObjectClass(weakRefInstance);
+//        jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "methodVarCallbackOne", "(I)V");
+//        (*env).CallVoidMethod(weakRefInstance, mid_callback, value);
+//    };
+//    testtestFunct(t);
+//}
+
+//extern "C" JNIEXPORT void JNICALL
+//Java_com_example_test2native_1cpp_MainActivity_testtestFunct(
+//        JNIEnv *env, jobject thiz) {
+//
+//    envLocalCopy = env;
+////    weakRefInstance = env->NewGlobalRef(thiz);
+//
+//    std::function<void(int)> t = [](int value) -> void {
+//        jclass cls_foo = envLocalCopy->GetObjectClass(weakRefInstance);
+//        jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "recordingStoppedCallback","()V");
+//        envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback);
+//    };
+//    testtestFunct(t);
+//}
+
+
+
+//// Initialise BSAudioEngine so that it is able to run
+//extern "C" JNIEXPORT void JNICALL
+//Java_com_example_test2native_1cpp_MainActivity_BSInitialise(
+//        JNIEnv *env,
+//        jobject activity/* this */) {
+//    BSInitialiseDevice();
+//
+//}
+
 extern "C" JNIEXPORT void JNICALL
-Java_com_androidlib_BSEngineModule_testtestFunct(
-        JNIEnv *env, jobject thiz) {
-
-  std::function<void(int)> t = [&env, &thiz](int value) -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "methodVarCallbackOne", "(I)V");
-      (*env).CallVoidMethod(thiz, mid_callback, value);
-  };
-  testtestFunct(t);
-}
-
-// Initialise BSAudioEngine so that it is able to run
-extern "C" JNIEXPORT void JNICALL
-Java_com_androidlib_MainActivity_BSInitialise(
-        JNIEnv *env,
-        jobject activity/* this */) {
-  BSInitialiseDevice();
-
+Java_com_example_test2native_1cpp_MainActivity_BSStop(JNIEnv *env, jobject thiz) {
+  BSStop();
 }
 
 // Just show some text to prove that C++ working
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_androidlib_MainActivity_stringFromJNI(
+Java_com_example_test2native_1cpp_MainActivity_stringFromJNI(
         JNIEnv *env,
         jobject activity/* this */) {
   std::string hello = "Hello from C++";
@@ -89,12 +115,11 @@ Java_com_androidlib_BSEngineModule_BSWriteMixdownFlac(JNIEnv *env, jobject thiz)
 
   std::function<void(std::string)> writeMixdownCallback = [&env, &thiz](
           const std::string &value) -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "methodVarCallbackOne",
-                                                  "(Ljava/lang/String;)V");
 
-      jstring jValue = (*env).NewStringUTF(value.c_str());
+      jmethodID mid_callback =envLocalCopy->GetMethodID(cls_foo, "writeMixdownCallback",
+                                                        "(Ljava/lang/String;)V");
 
+      jstring jValue = envLocalCopy->NewStringUTF(value.c_str());
       (*env).CallVoidMethod(thiz, mid_callback, jValue);
   };
   BSWriteMixdownFlac(writeMixdownCallback);
@@ -110,11 +135,12 @@ Java_com_androidlib_BSEngineModule_BSReadMixdownFlac(JNIEnv *env, jobject thiz) 
 // Will be redundatnt and should be ignored when there are event and callback wrappers working for android
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_androidlib_BSEngineModule_BSInitialiseDevice(JNIEnv *env, jobject thiz) {
-    std::cout<<"BSAudioEngine"<<std::endl;
-    printf("Java_com_androidlib_BSEngineModule_BSInitialiseDevice");
-  BSInitialiseDevice();
-  jboolean a = true;
-  return a;
+
+  envLocalCopy = env;
+  weakRefInstance = env->NewGlobalRef(thiz);
+  cls_foo = envLocalCopy->GetObjectClass(weakRefInstance);
+
+  return BSInitialiseDevice();
 }
 
 extern "C" JNIEXPORT void JNICALL
@@ -123,23 +149,21 @@ Java_com_androidlib_BSEngineModule_BSRecordTrack(JNIEnv *env, jobject thiz,
                                                                int currentTrackNumber,
                                                                int currentTakeNumber) {
 
-  std::cout<<"BSAudioEngine"<<std::endl;
-  std::function<void(long, int, std::string,
-                     std::vector<float>)> recordingStoppedCallback = [&env, &thiz](long valueLong,
-                                                                                   int valueInt,
-                                                                                   const std::string &valueString,
-                                                                                   std::vector<float> valueVector) -> void {
-//      jclass cls_foo = (*env).GetObjectClass(thiz);
-//      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "recordingStoppedCallback",
-//                                                  "(J;I;Ljava/lang/String;[F;)V");
 
-//      jstring jValue = (*env).NewStringUTF(valueString.c_str());
-//      jfloatArray jfloatArrayValue = convertVectorFloatToJava(env, valueVector);
-//      (*env).CallVoidMethod(thiz, mid_callback, valueLong, valueInt, jValue, jfloatArrayValue);
+  std::function<void(long, int, std::string,
+                     std::vector<float>)> recordingStoppedCallback = [](long valueLong,
+                                                                        int valueInt,
+                                                                        const std::string &valueString,
+                                                                        std::vector<float> valueVector) -> void {
+      cls_foo = envLocalCopy->GetObjectClass(weakRefInstance);
+      jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "recordingStoppedCallback",
+                                                         "(JILjava/lang/String;[F)V");
+
+      jstring jValue = envLocalCopy->NewStringUTF(valueString.c_str());
+      jfloatArray jfloatArrayValue = convertVectorFloatToJava(envLocalCopy, valueVector);
+      envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback, valueLong, valueInt, jValue, jfloatArrayValue);
   };
 
-
-//    std::function<void (long ,int, std::string,std::vector<float>  )> recordingStoppedCallback;
   BSRecordTrack(startAtMicros, currentTrackNumber, currentTakeNumber, recordingStoppedCallback);
 }
 extern "C" JNIEXPORT void JNICALL
@@ -147,13 +171,13 @@ Java_com_androidlib_BSEngineModule_BSPlayTrack(JNIEnv *env, jobject thiz,
                                                              jlong startAtMicros,
                                                              int currentTrackNumber,
                                                              int currentTakeNumber) {
-  std::function<void( )> callBack = [&env, &thiz]() -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "playTrackFinishedCallback",
-                                                  "()V");
+  std::function<void( )> callBack = []() -> void {
+
+      jmethodID mid_callback = envLocalCopy-> GetMethodID(cls_foo, "playTrackFinishedCallback",
+                                                          "()V");
 
 
-      (*env).CallVoidMethod(thiz, mid_callback);
+      envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback);
   };
   BSPlayTrack(startAtMicros, currentTrackNumber, currentTakeNumber, callBack);
 }
@@ -207,13 +231,13 @@ extern "C" JNIEXPORT void JNICALL
 Java_com_androidlib_BSEngineModule_BSMultitrackPlay(JNIEnv *env, jobject thiz,
                                                                   jlong startAtMicros) {
 
-  std::function<void( )> multitrackPlayFinishedCallback = [&env, &thiz]() -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "multitrackPlayFinishedCallback",
-                                                  "()V");
+  std::function<void( )> multitrackPlayFinishedCallback = []() -> void {
+
+      jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "multitrackPlayFinishedCallback",
+                                                         "()V");
 
 
-      (*env).CallVoidMethod(thiz, mid_callback);
+      envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback);
   };
   BSMultitrackPlay(startAtMicros,multitrackPlayFinishedCallback );
 }
@@ -226,17 +250,17 @@ Java_com_androidlib_BSEngineModule_BSMultitrackRecord(JNIEnv *env, jobject thiz,
 
 
   std::function<void(long, int, std::string,
-                     std::vector<float>)> recordingStoppedCallback = [&env, &thiz](long valueLong,
-                                                                                   int valueInt,
-                                                                                   const std::string &valueString,
-                                                                                   std::vector<float> valueVector) -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "recordingStoppedCallback",
-                                                  "(J;I;Ljava/lang/String;[F;)V");
+                     std::vector<float>)> recordingStoppedCallback = [](long valueLong,
+                                                                        int valueInt,
+                                                                        const std::string &valueString,
+                                                                        std::vector<float> valueVector) -> void {
 
-      jstring jValue = (*env).NewStringUTF(valueString.c_str());
-      jfloatArray jfloatArrayValue = convertVectorFloatToJava(env, valueVector);
-      (*env).CallVoidMethod(thiz, mid_callback, valueLong, valueInt, jValue, jfloatArrayValue);
+      jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "recordingStoppedCallback",
+                                                         "(J;I;Ljava/lang/String;[F;)V");
+
+      jstring jValue = envLocalCopy->NewStringUTF(valueString.c_str());
+      jfloatArray jfloatArrayValue = convertVectorFloatToJava(envLocalCopy, valueVector);
+      envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback, valueLong, valueInt, jValue, jfloatArrayValue);
   };
 
 
@@ -314,11 +338,11 @@ Java_com_androidlib_BSEngineModule_BSAnalyseTrack(JNIEnv *env, jobject thiz,
                                                                                  int sampleRate,
                                                                                  int bitdepth,
                                                                                  long  lengthInMicros) -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "analyseTrackCallback",
-                                                  "(J;I;I;J;)V");
 
-      (*env).CallVoidMethod(thiz, mid_callback, lengthInSamples, sampleRate, bitdepth, lengthInMicros);
+      jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "analyseTrackCallback",
+                                                         "(J;I;I;J;)V");
+
+      envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback, lengthInSamples, sampleRate, bitdepth, lengthInMicros);
   };
 
   BSAnalyseTrack(convertJStringToStd(env, absoluteFilePath), analyseTrackCallback);
@@ -335,12 +359,12 @@ Java_com_androidlib_BSEngineModule_BSSetCompressionValues(JNIEnv *env, jobject t
 extern "C" JNIEXPORT void JNICALL
 Java_com_androidlib_BSEngineModule_BSCompressFiles(JNIEnv *env, jobject thiz) {
 
-  std::function<void(std::vector<std::string>)> compressFilesCallback = [&env, &thiz](std::vector<std::string> valueVector) -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "compressFilesCallback",
-                                                  "([Ljava/lang/String;)V");
+  std::function<void(std::vector<std::string>)> compressFilesCallback = [](std::vector<std::string> valueVector) -> void {
+      jclass cls_foo = envLocalCopy->GetObjectClass(weakRefInstance);
+      jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "compressFilesCallback",
+                                                         "([Ljava/lang/String;)V");
 
-      (*env).CallVoidMethod(thiz, mid_callback, convertVectorStringToJava(env, valueVector));
+      envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback, convertVectorStringToJava(envLocalCopy, valueVector));
   };
 
   BSCompressFiles(compressFilesCallback);
@@ -349,12 +373,13 @@ Java_com_androidlib_BSEngineModule_BSCompressFiles(JNIEnv *env, jobject thiz) {
 extern "C" JNIEXPORT void JNICALL
 Java_com_androidlib_BSEngineModule_BSCompressFile(JNIEnv *env, jobject thiz,
                                                                 jstring absoluteFilePath) {
-  std::function<void(std::string)> compressFileCallback = [&env, &thiz](std::string filePath) -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "compressFileCallback",
-                                                  "(Ljava/lang/String;)V");
+  std::function<void(std::string)> compressFileCallback = [ ](std::string filePath) -> void {
 
-      (*env).CallVoidMethod(thiz, mid_callback, filePath.c_str());
+      jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "compressFileCallback",
+                                                         "(Ljava/lang/String;)V");
+
+      jstring jValue = envLocalCopy->NewStringUTF(filePath.c_str());
+      envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback, jValue);
   };
 
   BSCompressFile(convertJStringToStd(env, absoluteFilePath), compressFileCallback);
@@ -366,17 +391,17 @@ Java_com_androidlib_BSEngineModule_BSReadFile(JNIEnv *env, jobject thiz,
                                                             int takeNum, jboolean sampleLoop) {
 
   std::function<void(long, int, std::string,
-                     std::vector<float>)> readFileCallback = [&env, &thiz](long recordedLength,
-                                                                           int sampleRate,
-                                                                           const std::string &filePath,
-                                                                           std::vector<float> waveformArray) -> void {
-      jclass cls_foo = (*env).GetObjectClass(thiz);
-      jmethodID mid_callback = (*env).GetMethodID(cls_foo, "readFileCallback",
-                                                  "(J;I;Ljava/lang/String;[F;)V");
+                     std::vector<float>)> readFileCallback = [ ](long recordedLength,
+                                                                 int sampleRate,
+                                                                 const std::string &filePath,
+                                                                 std::vector<float> waveformArray) -> void {
 
-      jstring jValue = (*env).NewStringUTF(filePath.c_str());
-      jfloatArray jfloatArrayValue = convertVectorFloatToJava(env, waveformArray);
-      (*env).CallVoidMethod(thiz, mid_callback, recordedLength, sampleRate, jValue, jfloatArrayValue);
+      jmethodID mid_callback = envLocalCopy->GetMethodID(cls_foo, "readFileCallback",
+                                                         "(J;I;Ljava/lang/String;[F;)V");
+
+      jstring jValue = envLocalCopy->NewStringUTF(filePath.c_str());
+      jfloatArray jfloatArrayValue = convertVectorFloatToJava(envLocalCopy, waveformArray);
+      envLocalCopy->CallVoidMethod(weakRefInstance, mid_callback, recordedLength, sampleRate, jValue, jfloatArrayValue);
   };
 
 

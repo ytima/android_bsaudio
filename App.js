@@ -1,12 +1,4 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- * @flow strict-local
- */
-
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -26,10 +18,9 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-const { BSAudioEngine } = NativeModules;
+const {BSAudioEngine} = NativeModules;
 
-
-const Section = ({ children, title }) => {
+const Section = ({children, title}) => {
   const isDarkMode = useColorScheme() === 'dark';
   return (
     <View style={styles.sectionContainer}>
@@ -56,43 +47,57 @@ const Section = ({ children, title }) => {
 };
 
 const App = () => {
-  const [recorded, setRecorded] = useState(false)
-  console.log('BSAudioEngine', BSAudioEngine)
+  const [recorded, setRecorded] = useState(false);
+  console.log('BSAudioEngine@@@@@', BSAudioEngine);
   // console.log('NativeModules', NativeModules)
   useEffect(() => {
-    const cb = (value) => {
-      console.log('testCallLib', value)
-    }
+    const cb = value => {
+      console.log('testCallLib', value);
+    };
     setTimeout(() => {
       // BSAudioEngine.testCallLib(cb)
       // const res = BSAudioEngine.BSInitialiseDevice()
       // console.log('BSAudioEngine.BSInitialiseDevice', res)
-      const res = BSAudioEngine.BSInitDevice()
-      console.log('BSAudioEngine.BSInitDevice', res)
-    }, 1000)
-
-  }, [])
+      const res = BSAudioEngine.BSInitDevice();
+      console.log('BSAudioEngine.BSInitDevice', res);
+    }, 1000);
+  }, []);
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
   const handleRecord = () => {
+    console.log('PRESSED');
+
     if (!recorded) {
       // long startAtMicros, int currentTrackNumber, int currentTakeNumber, Callback callback
       // recordedLength, sampleRate, filePath, waveformArray
-      BSAudioEngine.BSRecordTrack_new('0', 0, 0, (recordedLength, sampleRate, filePath, waveformArray) => {
-        console.log('BSAudioEngine.BSRecordTrack', recordedLength, sampleRate, filePath, waveformArray)
-      })
-      setRecorded(prev => !prev)
-      console.log('BSAudioEngine.BSRecordTrack')
+      BSAudioEngine.BSRecordTrack_new(
+        '0',
+        0,
+        0,
+        (recordedLength, sampleRate, filePath, waveformArray) => {
+          console.log(
+            'BSAudioEngine.BSRecordTrack',
+            recordedLength,
+            sampleRate,
+            filePath,
+            waveformArray,
+          );
+        },
+      );
+      setRecorded(prev => !prev);
+      console.log('BSAudioEngine.BSRecordTrack');
     } else {
-      BSAudioEngine.BSStop_new()
+      BSAudioEngine.BSStop_new();
     }
-  }
+  };
   const handlePlay = () => {
-    BSAudioEngine.BSMultitrackPlay("0", (res) => console.log('BSMultitrackPlay', res))
-  }
+    BSAudioEngine.BSMultitrackPlay('0', res =>
+      console.log('BSMultitrackPlay', res),
+    );
+  };
   return (
     <SafeAreaView style={backgroundStyle}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
@@ -100,12 +105,22 @@ const App = () => {
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
         <Header />
-        <TouchableOpacity onPress={handleRecord} style={{ width: 200, height: 50, backgroundColor: 'yellow' }}>
-
+        <TouchableOpacity
+          onPress={handleRecord}
+          style={{
+            width: 200,
+            height: 50,
+            backgroundColor: 'yellow',
+          }}>
+          <Text>BSRecordTrack_new</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handlePlay} style={{ width: 200, height: 50, backgroundColor: 'green' }}>
-
-        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={handlePlay}
+          style={{
+            width: 200,
+            height: 50,
+            backgroundColor: 'green',
+          }}></TouchableOpacity>
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
@@ -150,3 +165,5 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+
+// Java_com_androidlib_BSEngineModule_
